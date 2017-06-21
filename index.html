@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>    <script src="https://code.highcharts.com/stock/highstock.js"></script>    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inconsolata', monospace;
+        font-weight: 100;
+      }
+    </style>
+</head>
+
+<body>
+    <h1>
+        <center>Adelphoi</center>
+    </h1>
+    <h6>
+        <center id="currentPriceTag"></center>
+    </h6>
+    <div id="container" style="height: 400px; min-width: 310px"></div>
+</body>
+<script>
+    Highcharts.setOptions({        global: {            useUTC: false        }    });    var nxtBTC;    var series = [];    var seriesBuy = {        name: "Buy",        data: [],        showInLegend: true,        visible: true,        color: '#0066FF',        dashStyle: 'dot',    };
+    var seriesSell = {        name: "Sell",        data: [],        showInLegend: true,        visible: true,        color: '#0066FF',        dashStyle: 'dot',    };
+    var currentBuyPrice;
+    series.push(seriesBuy, seriesSell);
+    function getData() {
+        var ADL_ID = "17477397104276156702";
+        $.getJSON('http://188.174.100.178:7876/nxt', {            "requestType": "getTrades",            "asset": ADL_ID,            "firstIndex": 0,            "lastIndex": 2000,            "includeAssetInfo": "true"
+        }, function(request) {            var trades = request.trades;            var rows;            var nxtTime = 1385294400;            $.each(trades, function(key, data) {                var decimals = data.decimals;                var NQT_QNT = 8 - decimals;                var quantityQNT = data.quantityQNT / Math.pow(10, decimals);                var priceNQT = data.priceNQT / Math.pow(10, NQT_QNT);                var total = data.quantityQNT * data.priceNQT / Math.pow(10, 8);                var NxtTimestamp = (+data.timestamp + +nxtTime) * 1000;                var d = new Date(NxtTimestamp);                if ("sell" == data.tradeType) {
+                    //console.log(priceNQT);                    seriesSell.data.push([NxtTimestamp, priceNQT]);                } else if ("buy" == data.tradeType) {
+                    console.log(priceNQT);                    seriesBuy.data.push([NxtTimestamp, priceNQT]);
+                } else {
+                    console.log('unknown trade type');
+                }
+            });
+            createChart(series);
+            document.getElementById('currentPriceTag').innerHTML = "Last Price<br/>" + seriesSell.data[0][1] + ' NXT<br\>' + seriesSell.data[0][1] * nxtBTC + 'btc'
+        });
+    }
+
+    function createChart(seriesToUse) {
+        // Create the chart        Highcharts.stockChart('container', {            exporting: {                enabled: false            },
+            legend: {                enabled: true            },            series: seriesToUse        });    }
+    getData();
+</script>
+
+</html>
